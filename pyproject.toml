@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "did_kanon"
+version = "0.1.0"
+description = "ACA-Py plugin: did:kanon DID method + AnonCreds registry over an Ethereum smart contract"
+requires-python = ">=3.12"
+dependencies = [
+  "web3>=6.20.0,<8.0.0",
+  "eth-account>=0.10.0",
+  # ── Tier-2 (Mode B / Groth16) runtime ───────────────────────────────
+  # `did_kanon.v1_0.zk` is eagerly imported by the plugin entry point, so
+  # every one of these has to be present in the runtime image even when the
+  # agent only exercises Mode A. Declaring them here so the docker build
+  # picks them up — previously they were only in the local dev venv, which
+  # is why the zk module silently broke in production.
+  "poseidon-py>=0.2.0",        # Poseidon Merkle hashes (BN254)
+  "wasmtime>=20",              # circom witness calculator (witness.py)
+  "py-ecc>=6.0.0",             # Groth16 verifier maths (groth16_verifier.py)
+]
+
+[tool.setuptools.packages.find]
+include = ["did_kanon*"]
+
+# Resource files shipped alongside Python modules. `poseidon_constants.json`
+# carries the round constants + MDS matrix for the BN254 Poseidon hash
+# used by the Mode B leaf computation — without it, the wheel installs
+# but `poseidon_hash` raises FileNotFoundError at first call.
+[tool.setuptools.package-data]
+"did_kanon" = ["**/*.json"]
